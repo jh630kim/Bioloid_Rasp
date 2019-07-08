@@ -118,7 +118,7 @@ int main(void)
 	// Serial 포트 열기
 	// DATABIT8,STOPBIT1,PARITYNONE,BPS115200 (모터제어용)
 	//////////////////////
-	if ((serial_fd = serialOpen(PORT,1000000)) < 0)
+	if ((serial_fd = serialOpen(PORT,BAUD_RATE)) < 0)
 	{
 		printf("Unable to open serial device: %s\n", strerror(errno));
 		return 1;
@@ -195,6 +195,7 @@ int main(void)
 	g_Emer_Stop = 0;
 
 	get_g_Position();
+	printf("Reading Current Position!!!\n");
 	// 초기 프롬프트
     printf(">");
 
@@ -722,7 +723,6 @@ void Move_For_Kin_BODY(char* pArgument[MAX_TOK],int ArgLen)
 // 06년 작성한 코드는 Move_Inv_Kin_temp이다.
 void Move_Inv_Kin(char* pArgument[MAX_TOK],int ArgLen)
 {
-	char str[2];
 	int i;
 	unsigned int state_to_run;
 	double theta[2][6];		// degree
@@ -764,30 +764,36 @@ void Move_Inv_Kin(char* pArgument[MAX_TOK],int ArgLen)
 
 	// 역기구학의 계산.
 	sol_cnt = Inverse_Kin_M2(T06, jt_deg, state);
-	
-	// state_to_run = 최적해(경험상... 별 무리가 없더라...)
-	state_to_run = 0;
-	if ((state_to_run < MAX_SOL) && (state[state_to_run] == 1))
+	if (sol_cnt != 0)
 	{
-		for (i=0;i<6;i++)	theta[RIGHT_LEG][i] = jt_deg[state_to_run][i];
-		LEG_D2P(theta[RIGHT_LEG], position_ax[RIGHT_LEG], RIGHT_LEG);
+		// state_to_run = 최적해(경험상... 별 무리가 없더라...)
+		state_to_run = 0;
+		if ((state_to_run < MAX_SOL) && (state[state_to_run] == 1))
+		{
+			for (i=0;i<6;i++)	theta[RIGHT_LEG][i] = jt_deg[state_to_run][i];
+			LEG_D2P(theta[RIGHT_LEG], position_ax[RIGHT_LEG], RIGHT_LEG);
+		}
+		else
+		{
+			printf("No Initial Solution\r\n");
+			return;
+		}
+		// 왼발의 위치 (고정값 이용)
+		position_ax[LEFT_LEG][0] = 511;
+		position_ax[LEFT_LEG][1] = 511;
+		position_ax[LEFT_LEG][2] = 474;
+		position_ax[LEFT_LEG][3] = 745;
+		position_ax[LEFT_LEG][4] = 548;
+		position_ax[LEFT_LEG][5] = 511;
+	
+		// Make & Send Packet
+		Cal_LEG_Speed(position_ax, speed_ax, NORMAL);
+		Sync_Write_LEG(position_ax, speed_ax);
 	}
 	else
 	{
-		printf("No Initial Solution\r\n");
-		return;
+		printf("No Solution\r\n");
 	}
-	// 왼발의 위치 (고정값 이용)
-	position_ax[LEFT_LEG][0] = 511;
-	position_ax[LEFT_LEG][1] = 511;
-	position_ax[LEFT_LEG][2] = 474;
-	position_ax[LEFT_LEG][3] = 745;
-	position_ax[LEFT_LEG][4] = 548;
-	position_ax[LEFT_LEG][5] = 511;
-
-	// Make & Send Packet
-	Cal_LEG_Speed(position_ax, speed_ax, NORMAL);
-	Sync_Write_LEG(position_ax, speed_ax);
 }
 
 // 06년에 이렇게 만들었는데, 어떤 의미인지 모르겠다.

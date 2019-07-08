@@ -292,6 +292,7 @@ typedef UINT		    ATOM;
 // Serial
 #define PORT	"/dev/ttyS0"
 // #define PORT	"/dev/ttyAMA0"
+#define BAUD_RATE	500000
 
 // LAN
 #define SERVER_ADDR "192.168.0.3"
