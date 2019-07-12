@@ -1334,8 +1334,10 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 
 		// <<<보정>>> 경험상, 무릅 관절(14,15번)의 힘이 약해서 목적한 값보다 10정도 낮아진다.
 		// 엉덩이가 처짐. 10정도는 올려줘야 정상적으로 걷는다.
+		/*
 		position_ax[RIGHT][3] += 10;
 		position_ax[ LEFT][3] += 10;
+		*/
 	}
 
 	// Make & Send Packet
@@ -1345,10 +1347,12 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 	// <<<<<<<< 상체 >>>>>>>>>
 	// 허리와 오른쪽 팔
 	// <<<보정>>> 경험상, 무게중심이 맞지 않는 것 같아 허리를 약간 앞으로 숙였다.
+	/*
 	theta_ARM[RIGHT][0] = 10;
 	theta_ARM[RIGHT][1] = 0;
 	theta_ARM[RIGHT][2] = -20;
 	theta_ARM[RIGHT][3] = 20;
+	*/
 	
 	// 위치로 변환.
 	ARM_D2P(theta_ARM[RIGHT], position_ax_ARM[RIGHT], RIGHT);
@@ -1448,8 +1452,10 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 				LEG_D2P(best_sol, position_ax[k], k);
 			}
 			// <<<보정>>> 경험상, 무릅 관절(14,15번)의 힘이 약해서 목적한 값보다 10정도 낮아진다.
+			/*
 			position_ax[RIGHT][3] += 10;	
 			position_ax[ LEFT][3] += 10;
+			*/
 			// <<<보정>>> 경험상, 고관절(10,11번)의 힘이 약해서 목적한 값보다 10정도 낮아진다. 
 			/*
 			if (support_leg == LEFT)	position_ax[LEFT][1] += 50;
