@@ -23,13 +23,14 @@ const double P_3_M3[3] = { 16, 17,  0};
 const double P_4_M4[3] = { 14,-14,  0};
 const double P_6_M6[3] = {-16,  0,-17};
 
-const double P_AR1_MAR1[3] = { 60,-27, 76.2};
-// const double P_AL1_MAL1[3] = { 60,-27,-76.2};
+// P_A1_MA1 = P_AR1_MAR1 =  P_AL1_MAL1
+const double P_A1_MA1[3] = { 60,-27, 76.2};
+// P_A3_MA3 = P_AR3_MAR3 =  P_AL3_MAL3 // 1mm차이, 그냥 0으로 단순화 
+// P_AR4_MAR4={26,-1,0} / P_AL4_MAL4={ 26, 1,0}
 const double P_A3_MA3[3]   = { 24,  0,  0.0};
-// 1mm차이다. 그냥... 0으로 하자.
-// const double P_AR4_MAR4[3]   = { 26, -1,  0.0};
-// const double P_AL4_MAL4[3]   = { 26,  1,  0.0};
+// P_A4_MA4 = P_AR4_MAR4 =  P_AL4_MAL4
 const double P_A4_MA4[3]   = { 26,  0,  0.0};
+
 
 // 다리의 각도 -> AX-12위치 변환식 -> 상수 이다!!!
 const double LEG_BASE[][6]   = {{   0,   0, 360,   0,   0, 360}, {   0,   0,   0, 360, 360, 360}};
@@ -376,6 +377,12 @@ void T05_for_M2_BODY(const double jt_deg[4], double mtx[3][4])
 	mtx[2][3] =  B_DH_a4*s34 - B_DH_a3*s3;
 }
 
+/* <<오류예감>> ******************************
+* 웬지 풀이랑 다른 것 같다. 왜지?
+* 상체는 한번도 검증한 적이 없다.
+* 좌우 팔 바뀐것도 해결해야 함.
+**********************************************/   
+    
 void T01_for_M2_BODY(const double jt_deg[4], double mtx[3][4])
 {
 	double jt_rad[4];
@@ -1035,7 +1042,9 @@ void ARM_P2D(int position_ax[4], double theta[4], int ARM)
 		theta_ax[i] = position_ax[i] * CONV_P2D + 30;
 		// 회전 각도에 따른 처리
 		theta_ax[i] = ARM_BASE[ARM][i] + ARM_SIGN[ARM][i]*theta_ax[i];
-
+		
+		
+		// <오류예감>
 		// D2P의 역할이 뭔지 잘 모르겠지만, 이래서는 0~360도 사이값이 안 나오겟다.
 		// 순서를 바꿔야 할 것 같다. 
 		// 기준점 변환 후 각도 변환으로...(JHK 190512)
@@ -1115,17 +1124,16 @@ void Cal_LEG_BASE(double TCF[3][4], double T06[3][4], int LEG)
 	Mul_TT(mtx,T_F_R6,T06);
 }
 
-// **************************
-// 전체
-// **************************
-// [입력] waist : 허리의 각도
-//        arm_theta : 팔의 각도
-//        theta : 다리의 현재 위치(각도)
-//
-//       BASE_FOOT : TORQUE를 계산하기 위한 기준 발.
-// [출력]Torque : 각 방향의 Torque의 크기. 단위는 [kg.m]임.
-//       Pcog   : 무게 중심의 위치
-// 역진자 원리에 의한 Torque 계산.
+// ******************************************************
+// BASE FOOT를 기준으로 한 Torque와 Pcog를 계산
+// 하체와 상체를 모두 고려하여 역진자 원리에 의해 계산
+// ******************************************************
+// [입력] BASE_FOOT : TORQUE를 계산하기 위한 기준 발.
+//		  arm_theta : 허리와 팔의 각도
+//        theta 	: 다리의 현재 위치(각도)
+// [출력] Torque 	: 각 방향의 Torque의 크기. 단위는 [kg.m]임.
+//        Pcog   	: BASE_FOOT 자료를 기준으로 한 무게 중심의 위치
+// ******************************************************
 void Cal_Torque_ALL(double arm_theta[2][4], const double theta[2][6],
 			        double Torque[3], double Pcog[3], const int BASE_FOOT)
 {
@@ -1148,84 +1156,103 @@ void Cal_Torque_ALL(double arm_theta[2][4], const double theta[2][6],
 		foot1 = LEFT_LEG;
 		foot2 = RIGHT_LEG;
 	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// 변수설명: T_기준좌표_목표좌표, P_기준좌표_목표좌표 
+	// MAR = Mess_Arm_Right
+	// C = Center
+	// BC = Body Center
+	// RF = Right Foot
+	////////////////////////////////////////////////////////////////////////////
+	
+	// P_RF_R6(M6): RF를 기준으로 한 M6(오른쪽 6번의 무게중심)의 좌표
+	/* <<오류예감>> ******************************
+	* Fto6(F를 기준으로 한 6번)의 위치는 고정이다.
+	* 그런데, 무게중심은 {5}(5번 좌표계)를 기준으로 측정했다.(그럴꺼다)
+	* 따라서, 무게중심을 계산할 때 T_RF_R5로 변환을 해야 한다.
+    * (단, 크게 차이는 나지 않을것같다.)
+    * 나중에 이걸로 {5}번? 뭉치의 무게중심을 계산할 것 같다.
+    * 왼쪽도 동일 문제 있다.
+    **********************************************/   
+	INV_T(T_R6_F, T_RF[R6]); 				// T_RF_R6 = (INV)T_R6_RF
+	Mul_TP(T_RF[R6],P_6_M6,P_RF[R6]);		// P_RF_R6(M6) = T_RF_R6 x P_6_M6
 
-	// T_RF_R6 = (INV)T_R6_RF
-	// T_LF_L6 = (INV)T_L6_LF
-	INV_T(T_R6_F, T_RF[R6]); 
-	Mul_TP(T_RF[R6],P_6_M6,P_RF[R6]);		// {3}
+	// P_RF_R4(M4) : RF를 기준으로 한 M4(오른쪽 4번의 무게중심)의 좌표
+	T64_for_M2(theta[foot1], mtx1);			// 관절각을 이용해서 T_{6}_{4} 계산
+	Mul_TT(T_RF[R6],mtx1,T_RF[R4]);			// T_RF_R4 = T_RF_R6 x T_R6_R4
+	Mul_TP(T_RF[R4],P_4_M4,P_RF[R4]);		// P_RF_R4(M4) = T_RF_R4 x P_4_M4
 
-	// T_RF_R4 = T_RF_R6 * T_R6_R4
-	// T_LF_L4 = T_LF_L6 * T_L6_L4
-	T64_for_M2(theta[foot1], mtx1);
-	Mul_TT(T_RF[R6],mtx1,T_RF[R4]);
-	Mul_TP(T_RF[R4],P_4_M4,P_RF[R4]);		// {3}
+	// P_RF_R3(M3) : RF를 기준으로 한 M3(오른쪽 3번의 무게중심)의 좌표
+	T43_for_M2(theta[foot1], mtx1);			// 관절각을 이용해서 T_{4}_{3} 계산
+	Mul_TT(T_RF[R4],mtx1,T_RF[R3]);			// T_RF_R3 = T_RF_R4 x T_R4_R3
+	Mul_TP(T_RF[R3],P_3_M3,P_RF[R3]);		// P_RF_R3(M3) = T_RF_R3 x P_3_M3
 
-	// T_RF_R3 = T_RF_R4 * T_R4_R3
-	// T_LF_L3 = T_LF_L4 * T_L4_L3
-	T43_for_M2(theta[foot1], mtx1);
-	Mul_TT(T_RF[R4],mtx1,T_RF[R3]);
-	Mul_TP(T_RF[R3],P_3_M3,P_RF[R3]);		// {3}
+	// P_RF_BC(MBC) : RF를 기준으로 한 MBC(BC번의 무게중심)의 좌표
+	TCF_for_M2(theta[foot1], mtx1, foot1);	// 관절각을 이용해서 T_BC_RF
+	INV_T(mtx1, T_RF[BC]);					// T_RF_BC = (INV)T_BC_RF
+	Mul_TP(T_RF[BC],P_C_MC,P_RF[BC]);		// P_RF_BC(MBC) = T_RF_BC x P_BC_MBC
 
-	// T_RF_BC = (INV)T_BC_RF
-	// T_LF_BC = (INV)T_BC_LF
-	TCF_for_M2(theta[foot1], mtx1, foot1);
-	INV_T(mtx1, T_RF[BC]);
-	Mul_TP(T_RF[BC],P_C_MC,P_RF[BC]);		// {3}
+	// P_RF_L3(M3)	: RF를 기준으로 한 M3(왼쪽 3번의 무게중심)의 좌표
+	T03_for_M2(theta[foot2], mtx1);			// 관절각을 이용해서 T_{0}_{3} 계산
+	Mul_TT(T_C_0[foot2],mtx1,mtx2);			// T_BC_L3 = T_BC_L0 x T_L0_L3
+	Mul_TT(T_RF[BC],mtx2,T_RF[L3]);			// T_RF_L3 = T_RF_BC x T_BC_L3
+	Mul_TP(T_RF[L3],P_3_M3,P_RF[L3]);		// P_RF_L3 = T_RF_L3 x P_3_M3
 
-	// T_RF_L3 = T_RF_BC * T_BC_L3
-	// T_LF_R3 = T_LF_BC * T_BC_R3
-	T03_for_M2(theta[foot2], mtx1);
-	Mul_TT(T_C_0[foot2],mtx1,mtx2);
-	Mul_TT(T_RF[BC],mtx2,T_RF[L3]);
-	Mul_TP(T_RF[L3],P_3_M3,P_RF[L3]);		// {3}
+	// P_RF_L4(M4)	: RF를 기준으로 한 M4(왼쪽 4번의 무게중심)의 좌표
+	T43_for_M2(theta[foot2], mtx1);			// 관절각을 이용해서 T_{4}_{3} 계산
+	INV_T(mtx1, mtx2);						// T_L3_L4 = (INV)T_L4_L3
+	Mul_TT(T_RF[L3], mtx2, T_RF[L4]);		// T_RF_L4 = T_RF_L3 x T_L3_L4
+	Mul_TP(T_RF[L4],P_4_M4,P_RF[L4]);		// P_RF_L4 = T_RF_L4 x P_4_M4
 
-	// T_RF_L4 = T_RF_L3 * T_L3_L4
-	// T_LF_R4 = T_RF_R3 * T_R3_R4
-	T43_for_M2(theta[foot2], mtx1);
-	INV_T(mtx1, mtx2);
-	Mul_TT(T_RF[L3], mtx2, T_RF[L4]);
-	Mul_TP(T_RF[L4],P_4_M4,P_RF[L4]);		// {3}
-
-	// T_RF_L6 = T_RF_L4 * T_L4_L6
-	T64_for_M2(theta[foot2], mtx1);
-	INV_T(mtx1, mtx2);
-	Mul_TT(T_RF[L4], mtx2, T_RF[L6]);
-	Mul_TP(T_RF[L6],P_6_M6,P_RF[L6]);		// {3}
+	// P_RF_L6(M6)	: RF를 기준으로 한 M6(왼쪽 6번의 무게중심)의 좌표
+	T64_for_M2(theta[foot2], mtx1);			// 관절각을 이용해서 T_{6}_{4} 계산
+	INV_T(mtx1, mtx2);						// T_L4_L6 = (INV)T_L6_L4
+	Mul_TT(T_RF[L4], mtx2, T_RF[L6]);		// T_RF_L6 = T_RF_L4 x T_L4_L6
+	Mul_TP(T_RF[L6],P_6_M6,P_RF[L6]);		// P_RF_L6 = T_RF_L6 x P_6_M6
 
 	// ***************************
 	// 몸통
 	// ***************************
-	// TFB x TB0 x T01 x P1M1
-	T01_for_M2_BODY(arm_theta[RIGHT], mtx1);
-	Mul_TT(T_BC_R0, mtx1, mtx2);
-	Mul_TT(T_RF[BC], mtx2, T_RF[AR1]);
-	Mul_TP(T_RF[AR1],P_AR1_MAR1,P_RF[AR1]);
-
+	/* <<오류예감>> ******************************
+	* 웬지 풀이랑 다른 것 같다. 왜지?
+	* 상체는 한번도 검증한 적이 없다.
+	* 좌우 팔 바뀐것도 해결해야 함.
+	**********************************************/  
+	// P_RF_AR1(MA1)	: RF를 기준으로 한 MA1(상체 몸통의 무게중심)의 좌표
+	T01_for_M2_BODY(arm_theta[RIGHT], mtx1);// 관절각을 이용해서 T_{A0}_{A1} 계산 
+	Mul_TT(T_BC_R0, mtx1, mtx2);			// T_BC_AR1 = T_BC_AR0 x T_AR0_AR1
+	Mul_TT(T_RF[BC], mtx2, T_RF[AR1]);		// T_RF_AR1 = T_RF_BC  x T_BC_AR1
+	Mul_TP(T_RF[AR1],P_A1_MA1,P_RF[AR1]);	// P_RF_AR1 = T_RF_AR1 x P_A1_MA1
+	
 	// ***************************
 	// 팔
 	// ***************************
-	T03_for_M2_BODY(arm_theta[RIGHT], mtx1);
-	Mul_TT(T_BC_R0, mtx1, mtx2);
-	Mul_TT(T_RF[BC], mtx2, T_RF[AR3]);
-	Mul_TP(T_RF[AR3],P_A3_MA3,P_RF[AR3]);
+	// P_RF_AR3(MAR3)	: RF를 기준으로 한 MAR3(우측 팔 3번의 무게중심)의 좌표
+	T03_for_M2_BODY(arm_theta[RIGHT], mtx1);// 관절각을 이용해서 T_{A0}_{AR3} 계산
+	Mul_TT(T_BC_R0, mtx1, mtx2);			// T_BC_AR3 = T_BC_AR0 x T_AR0_AR3
+	Mul_TT(T_RF[BC], mtx2, T_RF[AR3]);		// T_RF_AR3 = T_RF_BC  x T_BC_AR3
+	Mul_TP(T_RF[AR3],P_A3_MA3,P_RF[AR3]);	// P_RF_AR3 = T_RF_AR3 x P_A3_MA3
+	
+	// P_RF_AR4(MAR4)	: RF를 기준으로 한 MAR4(우측 팔 4번의 무게중심)의 좌표
+	T04_for_M2_BODY(arm_theta[RIGHT], mtx1);// 관절각을 이용해서 T_{A0}_{AR4} 계산
+	Mul_TT(T_BC_R0, mtx1, mtx2);			// T_BC_AR4 = T_BC_AR0 x T_AR0_AR4
+	Mul_TT(T_RF[BC], mtx2, T_RF[AR4]);		// T_RF_AR4 = T_RF_BC  x T_BC_AR4
+	Mul_TP(T_RF[AR4],P_A4_MA4,P_RF[AR4]);	// P_RF_AR4 = T_RF_AR4 x P_A4_MA4
 
-	T04_for_M2_BODY(arm_theta[RIGHT], mtx1);
-	Mul_TT(T_BC_R0, mtx1, mtx2);
-	Mul_TT(T_RF[BC], mtx2, T_RF[AR4]);
-	Mul_TP(T_RF[AR4],P_A4_MA4,P_RF[AR4]);
-
-	T03_for_M2_BODY(arm_theta[LEFT], mtx1);
-	Mul_TT(T_BC_L0, mtx1, mtx2);
-	Mul_TT(T_RF[BC], mtx2, T_RF[AL3]);
-	Mul_TP(T_RF[AL3],P_A3_MA3,P_RF[AL3]);
-
-	T04_for_M2_BODY(arm_theta[LEFT], mtx1);
-	Mul_TT(T_BC_L0, mtx1, mtx2);
-	Mul_TT(T_RF[BC], mtx2, T_RF[AL4]);
-	Mul_TP(T_RF[AL4],P_A4_MA4,P_RF[AL4]);
+	// P_RF_AL3(MAL3)	: RF를 기준으로 한 MAL3(좌측 팔 3번의 무게중심)의 좌표
+	T03_for_M2_BODY(arm_theta[LEFT], mtx1);	// 관절각을 이용해서 T_{A0}_{AL3} 계산
+	Mul_TT(T_BC_L0, mtx1, mtx2);			// T_BC_AL3 = T_BC_AL0 x T_AL0_AL3
+	Mul_TT(T_RF[BC], mtx2, T_RF[AL3]);		// T_RF_AL3 = T_RF_BC  x T_BC_AL3
+	Mul_TP(T_RF[AL3],P_A3_MA3,P_RF[AL3]);	// P_RF_AL3 = T_RF_AL3 x P_A3_MA3
+	
+	// P_RF_AL4(MAL4)	: RF를 기준으로 한 MAL4(좌측 팔 4번의 무게중심)의 좌표
+	T04_for_M2_BODY(arm_theta[LEFT], mtx1);	// 관절각을 이용해서 T_{A0}_{AL4} 계산
+	Mul_TT(T_BC_L0, mtx1, mtx2);			// T_BC_AL4 = T_BC_AL0 x T_AL0_AL4
+	Mul_TT(T_RF[BC], mtx2, T_RF[AL4]);		// T_RF_AL4 = T_RF_BC  x T_BC_AL4
+	Mul_TP(T_RF[AL4],P_A4_MA4,P_RF[AL4]);	// P_RF_AL3 = T_RF_AL4 x P_A4_MA4
 
 	///////////////////////////////
-	// 토크의 계산.
+	// 토크 계산(BASE FOOT 좌표계 기준)
 	///////////////////////////////
 	Torque[X] = Torque[Y] = Torque[Z] = 0;
 	for (i=0;i<ALL_TORQUE;i++)
@@ -1238,9 +1265,8 @@ void Cal_Torque_ALL(double arm_theta[2][4], const double theta[2][6],
 	Torque[Y] = Torque[Y]*G_Acc / 1000000L;
 	Torque[Z] = Torque[Z]*G_Acc / 1000000L;
 
-
 	//////////////////////////////
-	// 무게중심 계산
+	// 무게중심 계산(BASE FOOT 좌표계 기준)
 	//////////////////////////////
 	ALL_WEIGHT_SUM = 0;
 	Pcog[X] = Pcog[Y] = Pcog[Z] = 0;
@@ -1389,7 +1415,7 @@ void Cal_Torque_BODY(const double arm_theta[2][4], double Torque[3], double Pcog
 	// TB0 x T01 x P1M1
 	T01_for_M2_BODY(arm_theta[RIGHT], mtx1);
 	Mul_TT(T_BC_R0, mtx1, T_BC[BR1]);
-	Mul_TP(T_BC[BR1],P_AR1_MAR1,P_BC[BR1]);
+	Mul_TP(T_BC[BR1],P_A1_MA1,P_BC[BR1]);
 
 	// ***************************
 	// 팔

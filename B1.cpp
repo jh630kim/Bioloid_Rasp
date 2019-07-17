@@ -397,7 +397,8 @@ void Get_Position(char* pArgument[MAX_TOK], int ArgLen)
 	
 	int index, direction;
 	float theta;
-	int ARM_position[4], LEG_position[6];
+	int ARM_position[4] = {0,0,0,0};
+	int LEG_position[6] = {0,0,0,0,0,0};
 	double ARM_theta[4], LEG_theta[6];
 
 	// rp [ID]
@@ -416,22 +417,13 @@ void Get_Position(char* pArgument[MAX_TOK], int ArgLen)
 	TxData[6] = 2;
 	TxData[7] = CalCheckSum(TxData,7);
 	
-	printf("\n\n-----------------\nData Sending\n-----------------\n\n");
 	// Data 송신.
 	SET_RTS;					// 송신 모드로 변경
 	write(serial_fd,TxData, 8);
 	RESET_RTS;					// 수신 모드로 변경
-	printf("Send Data\n");
-	PrintHexStr(TxData,8);
-	printf("\r\n");
 	delay(5);					// 1ms delay
 	// 데이터 수신
-	printf("\n\n-----------------\nData Receiving\n-----------------\n\n");
 	Result = RX_data_check(pRxData);
-	
-	printf("Receiving Data\n");
-	PrintHexStr(pRxData,Result);
-	printf("\r\n");
 	Dump_RX_data();
 	
 	Position = pRxData[5]+(pRxData[6]<<8);
@@ -467,7 +459,7 @@ void Get_Position(char* pArgument[MAX_TOK], int ArgLen)
 	}
 
 	if (Result != 0)
-		printf("Position = %4d, degree = %6.1f (%d) \r\n",Position, theta, Result);
+		printf("Position = %4d, degree = %6.1f \r\n",Position, theta);
 	else
 		printf("Try 'dd' command.\r\n");
 		
@@ -936,7 +928,11 @@ void Check_All_Torque(char* pArgument[MAX_TOK],int ArgLen)
 	printf("\r\n");
 	
 	Cal_Torque_ALL(arm_theta, theta, Torque, Pcog, RIGHT_LEG);
-	printf("\r\nCOG:              %6.1f, %6.1f, %6.1f \r\n",Pcog[0], Pcog[1], Pcog[2]);
+	
+	// BaseFoot을 기준으로 한 COG
+	printf("\r\nRF Based COG     : %6.1f, %6.1f, %6.1f \r\n",Pcog[0], Pcog[1], Pcog[2]);
+	// BaseFoot을 기준으로 한 Torque
+	printf("\r\nRF Based Torque  :%6.1f, %6.1f, %6.1f \r\n",Torque[0], Torque[1], Torque[2]);				
 
 	return;
 }
