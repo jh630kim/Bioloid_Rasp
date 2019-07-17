@@ -23,13 +23,16 @@ const double P_3_M3[3] = { 16, 17,  0};
 const double P_4_M4[3] = { 14,-14,  0};
 const double P_6_M6[3] = {-16,  0,-17};
 
-// P_A1_MA1 = P_AR1_MAR1 =  P_AL1_MAL1
+// P_A1_MA1 = P_AR1_MAR1
+// P_AL1_MAL1 = { 60,-27,-76.2}; // 하지만 여기서는 P_AR1_MAR1을 이용한다.	
 const double P_A1_MA1[3] = { 60,-27, 76.2};
-// P_A3_MA3 = P_AR3_MAR3 =  P_AL3_MAL3 // 1mm차이, 그냥 0으로 단순화 
-// P_AR4_MAR4={26,-1,0} / P_AL4_MAL4={ 26, 1,0}
+// P_A3_MA3 = P_AR3_MAR3 =  P_AL3_MAL3 
 const double P_A3_MA3[3]   = { 24,  0,  0.0};
-// P_A4_MA4 = P_AR4_MAR4 =  P_AL4_MAL4
+// P_A4_MA4 = P_AR4_MAR4 =  P_AL4_MAL4	// 1mm차이, 그냥 0으로 단순화 
+// P_AR4_MAR4={26,-1,0} / P_AL4_MAL4={ 26, 1,0} 
 const double P_A4_MA4[3]   = { 26,  0,  0.0};
+
+
 
 
 // 다리의 각도 -> AX-12위치 변환식 -> 상수 이다!!!
