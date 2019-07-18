@@ -711,87 +711,19 @@ void Move_For_Kin_BODY(char* pArgument[MAX_TOK],int ArgLen)
     return;
 }
 
-// 19년에 왼발만 움직이도록 코드를 다시짰다.
-// 06년 작성한 코드는 Move_Inv_Kin_temp이다.
+// 06년 작성
+// Inverse_Kin_M2를 이용하는데, 이놈은 {0}을 기준으로 {6}의 위치를 계산한다.
+// 따라서, 왼발, 오른발이 같이 움직인다.
+
+// 19년에 
+// 양쪽 발이 같이 움직이는게 이상해서 
+// 왼발을 고정하고 오른발만 움직이도록 다시 작성했는데,
+// 그 코드는 Power 문제로 Test하지 못했다.
+
+// 지금(19.7월)... 
+// 06년 작성한 코드의 의미가 기억나서 다시 살리고 19년 작성한 코드를 지웠다.
+// mi 명령으로 호출되는 이 함수는 Inverse_Kin_M2()를 Test하기 위한 목적이다.
 void Move_Inv_Kin(char* pArgument[MAX_TOK],int ArgLen)
-{
-	int i;
-	unsigned int state_to_run;
-	double theta[2][6];		// degree
-	double mtx[3][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-
-	int speed_ax[2][6], position_ax[2][6];
-	int sol_cnt, state[MAX_SOL];
-	double jt_deg[MAX_SOL][6];
-	
-	double T06[3][4];
-
-	////////////////////////////////////
-	// X,Y,Z 축의 목표 위치를 구함.
-	// 역기구학
-	////////////////////////////////////
-	// mi [X pos][Y pos][Z pos]
-	if (ArgLen < 4)	{printf("Not enough parameter. \r\n");	return; }
-
-	// 참고) mtx는 	mtx[0][3](x_pos), mtx[1][3](y_pos), mtx[2][3](z_pos)만 사용함.
-	// 오른발의 위치
-	for (i=0;i<3;i++)	mtx[i][3] = atof(pArgument[i+1]);
-	
-	// 이후 코드는 Move_COG_Working()에서 따왔다.
-	// t=0에서의 초기값(최초 걸음을 시작할때)
-	/*
-	step = LEFT_LEG;		// 지탱하는 발.
-	x[RIGHT_LEG] = X_BASE_POS;			x[LEFT_LEG] = X_BASE_POS;
-	y[RIGHT_LEG] = yr;					y[LEFT_LEG] = yf;
-	z[RIGHT_LEG] = zp + g_z_RIGHT_BASE;	z[LEFT_LEG] = zp + g_z_LEFT_BASE;
-	*/
-	Get_R_C_F(mtx);
-	/*
-	mtx[X][3] = x[k];
-	mtx[Y][3] = y[k];
-	mtx[Z][3] = z[k];
-	*/
-	// {BC}{F}T -> {0}{6}T로 변경.
-	Cal_LEG_BASE(mtx, T06, RIGHT_LEG);
-
-	// 역기구학의 계산.
-	sol_cnt = Inverse_Kin_M2(T06, jt_deg, state);
-	if (sol_cnt != 0)
-	{
-		// state_to_run = 최적해(경험상... 별 무리가 없더라...)
-		state_to_run = 0;
-		if ((state_to_run < MAX_SOL) && (state[state_to_run] == 1))
-		{
-			for (i=0;i<6;i++)	theta[RIGHT_LEG][i] = jt_deg[state_to_run][i];
-			LEG_D2P(theta[RIGHT_LEG], position_ax[RIGHT_LEG], RIGHT_LEG);
-		}
-		else
-		{
-			printf("No Initial Solution\r\n");
-			return;
-		}
-		// 왼발의 위치 (고정값 이용)
-		position_ax[LEFT_LEG][0] = 511;
-		position_ax[LEFT_LEG][1] = 511;
-		position_ax[LEFT_LEG][2] = 474;
-		position_ax[LEFT_LEG][3] = 745;
-		position_ax[LEFT_LEG][4] = 548;
-		position_ax[LEFT_LEG][5] = 511;
-	
-		// Make & Send Packet
-		Cal_LEG_Speed(position_ax, speed_ax, NORMAL);
-		Sync_Write_LEG(position_ax, speed_ax);
-	}
-	else
-	{
-		printf("No Solution\r\n");
-	}
-}
-
-// 06년에 이렇게 만들었는데, 어떤 의미인지 모르겠다.
-// 좌우 발 중 하나를 선택해서 움직이도록 코드를 다시짰다.
-// 이건... 의미를 몰라서 일단 _temp를 붙여서 호출하지 않도록 막아놨다.
-void Move_Inv_Kin_temp(char* pArgument[MAX_TOK],int ArgLen)
 {
 	char str[2];
 	int i;
