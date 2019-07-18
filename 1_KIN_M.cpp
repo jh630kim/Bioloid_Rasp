@@ -1016,13 +1016,17 @@ void LEG_P2D(int position_ax[6], double theta[6], int LEG)
 		// 회전 각도에 따른 처리
 		theta_ax[i] = LEG_BASE[LEG][i] + LEG_SIGN[LEG][i]*theta_ax[i];
 		
-		// ARM_P2D 구현 중 뭔가 이상하다.
-		// ARM_P2D 고칠때 같이 고치자(JHK 190512)
+		// 190718, range_deg branch
+		// position(0~1023)을 각도(0~360)으로 변경하는데
+		// 지금은 0~360으로 변환 후 기준점을 변환시켜 음수가 나올때가 있다.
+		// 출력이 0~360으로 나오도록 순서를 바꿨다. 
+		// -180에서 180으로 바꾸려면, range_deg를 수정하자.
 		
-		// 각도를 0 ~ 360도 사이로 변환.
-		theta_ax[i] = range_deg(theta_ax[i]);
 		// 기준점 변환
 		theta[i] = theta_ax[i] - LEG_DtoP[LEG][i];
+
+		// 각도를 0 ~ 360도 사이로 변환.
+		theta_ax[i] = range_deg(theta_ax[i]);
 	}
 	return;
 }
@@ -1046,16 +1050,17 @@ void ARM_P2D(int position_ax[4], double theta[4], int ARM)
 		// 회전 각도에 따른 처리
 		theta_ax[i] = ARM_BASE[ARM][i] + ARM_SIGN[ARM][i]*theta_ax[i];
 		
+		// 190718, range_deg branch
+		// position(0~1023)을 각도(0~360)으로 변경하는데
+		// 지금은 0~360으로 변환 후 기준점을 변환시켜 음수가 나올때가 있다.
+		// 출력이 0~360으로 나오도록 순서를 바꿨다. 
+		// -180에서 180으로 바꾸려면, range_deg를 수정하자.
 		
-		// <오류예감>
-		// D2P의 역할이 뭔지 잘 모르겠지만, 이래서는 0~360도 사이값이 안 나오겟다.
-		// 순서를 바꿔야 할 것 같다. 
-		// 기준점 변환 후 각도 변환으로...(JHK 190512)
+		// 기준점 변환
+		theta[i] = theta_ax[i] - ARM_DtoP[ARM][i];
 		
 		// 각도를 0 ~ 360도 사이로 변환.
 		theta_ax[i] = range_deg(theta_ax[i]);
-		// 기준점 변환
-		theta[i] = theta_ax[i] - ARM_DtoP[ARM][i];	// XXX_D2P()는 +인데 여기는 왜 -지?
 	}
 	return;
 }

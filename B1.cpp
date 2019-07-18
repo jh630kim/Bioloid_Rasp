@@ -334,7 +334,7 @@ void MonitorRoutine(char* MonCmd)
 		case 'r':
 			Dump_RX_data();
 			if (token[0][1] == 'p') {	Get_Position(token, ArgLen);	break;   }
-			if (token[0][1] == 'c') {	Get_COG_Data();	break;   }	// 다리만...
+			if (token[0][1] == 'c') {	Get_COG_Data();	break;   }		// 다리만...
 			if (token[0][1] == 'h')
 			{ 
 				if (ArgLen < 4)	{printf("Not enough parameter. \r\n");	break; }
