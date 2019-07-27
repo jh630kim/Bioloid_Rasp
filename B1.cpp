@@ -1341,20 +1341,18 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 	Sync_Write_LEG(position_ax, speed_ax);
 
 	// <<<<<<<< 상체 >>>>>>>>>
-	// 허리와 오른쪽 팔
-	// <<<보정>>> 경험상, 무게중심이 맞지 않는 것 같아 허리를 약간 앞으로 숙였다.
-	/*
-	theta_ARM[RIGHT][0] = 10;
+	// 허리와 오른쪽 팔의 자세
+	// theta_ARM[RIGHT][0] = 10;	// <<<보정>>> 허리를 약간 앞으로 숙인다.
+	theta_ARM[RIGHT][0] = 0;
 	theta_ARM[RIGHT][1] = 0;
 	theta_ARM[RIGHT][2] = -20;
 	theta_ARM[RIGHT][3] = 20;
-	*/
 	
 	// 위치로 변환.
 	ARM_D2P(theta_ARM[RIGHT], position_ax_ARM[RIGHT], RIGHT);
 
-	// 왼쪽 팔
-	theta_ARM[LEFT][0] = 0;		// 허리와 같은 ID이나, 허리는 RIGHT ARM의 값을 이용한다.
+	// 왼쪽 팔의 자세
+	theta_ARM[LEFT][0] = 0;		// 의미 없음, 허리는 RIGHT ARM을 이용.
 	theta_ARM[LEFT][1] = 0;
 	theta_ARM[LEFT][2] = 20;
 	theta_ARM[LEFT][3] = -20;
@@ -1378,7 +1376,7 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 	//////////////////////////////
 	for (j = 0;j<count;j++)
 	{
-		printf("Supporting Leg(RIGHT = 0, LEFT = 1) = %d\r\n",step);
+		printf("Supporting Leg = %s\r\n",((step==RIGHT_LEG)?"RIGHT_LEG":"LEFT_LEG"));
 		
 		for (t=0;t<TE;t++)
 		{
@@ -1453,7 +1451,7 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 			position_ax[ LEFT][3] += 10;
 			*/
 			// <<<보정>>> 경험상, 고관절(10,11번)의 힘이 약해서 목적한 값보다 10정도 낮아진다. 
-			/*
+			/* 여기는 발목으로 보정해야 한다!!!
 			if (support_leg == LEFT)	position_ax[LEFT][1] += 50;
 			else 						position_ax[RIGHT][1] -= 50;
 			*/
@@ -1490,6 +1488,10 @@ void Move_COG_Walking(char* pArgument[MAX_TOK],int ArgLen)
 			if (j<2 && temp == 'y')
 			{
 				fprintf(fp_out,"%4d, %6.1f, %6.1f, %6.1f, %6.1f, %6.1f, %6.1f, %6.1f, %6.1f, %6.1f, %8.5f, %8.5f, %8.5f \r\n",
+						// tn,
+						// R_X_Pos,R_Y_Pos,R_Z_Pos,
+						// L_X_Pos,L_Y_Pos,L_Z_Pos,  
+						// COG_X,  COG_Y,  COG_Z, Torque_X, Torque_Y, Torque_Z
 						t,
 						x[RIGHT_LEG]+x_comp[RIGHT_LEG], y[RIGHT_LEG]+y_comp[RIGHT_LEG], z[RIGHT_LEG]+z_comp[RIGHT_LEG],
 						x[LEFT_LEG]+x_comp[RIGHT_LEG], y[LEFT_LEG]+y_comp[RIGHT_LEG], z[LEFT_LEG]+z_comp[LEFT_LEG],
