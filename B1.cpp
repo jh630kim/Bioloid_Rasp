@@ -914,16 +914,40 @@ void Check_All_Torque(char* pArgument[MAX_TOK],int ArgLen)
 	printf("\r\n");
 
 	printf("\r\nRIGHT_LEG_Theta: ");
-	for(i=0;i<6;i++)	printf(" %6.1f,", theta[RIGHT][i]);
+	// for(i=0;i<6;i++)	printf(" %6.1f,", theta[RIGHT][i]);
+	for(i=0;i<6;i++)
+	{
+		double temp;
+		temp = theta[RIGHT][i];
+		printf(" %6.1f,", (temp > PI_DEG)?temp-(2.0*PI_DEG):temp);
+	}
 	
 	printf("\r\nLEFT_LEG_Theta:  ");
-	for(i=0;i<6;i++)	printf(" %6.1f,", theta[LEFT][i]);
+	// for(i=0;i<6;i++)	printf(" %6.1f,", theta[LEFT][i]);
+	for(i=0;i<6;i++)
+	{
+		double temp;
+		temp = theta[LEFT][i];
+		printf(" %6.1f,", (temp > PI_DEG)?temp-(2.0*PI_DEG):temp);
+	}
 
 	printf("\r\nRIGHT_ARM_Theta: ");
-	for(i=0;i<4;i++)	printf(" %6.1f,", arm_theta[RIGHT][i]);
+	// for(i=0;i<4;i++)	printf(" %6.1f,", arm_theta[RIGHT][i]);
+	for(i=0;i<6;i++)
+	{
+		double temp;
+		temp = arm_theta[RIGHT][i];
+		printf(" %6.1f,", (temp > PI_DEG)?temp-(2.0*PI_DEG):temp);
+	}
 	
 	printf("\r\nLEFT_ARM_Theta:  ");
-	for(i=0;i<4;i++)	printf(" %6.1f,", arm_theta[LEFT][i]);
+	// for(i=0;i<4;i++)	printf(" %6.1f,", arm_theta[LEFT][i]);
+	for(i=0;i<6;i++)
+	{
+		double temp;
+		temp = arm_theta[LEFT][i];
+		printf(" %6.1f,", (temp > PI_DEG)?temp-(2.0*PI_DEG):temp);
+	}
 	
 	printf("\r\n");
 	

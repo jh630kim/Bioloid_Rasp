@@ -776,13 +776,13 @@ double range_deg(double a)
 		{
 			a = a - 2.0*PI_DEG;
 		}
-		else if(a < (-1*PI_DEG))
+		else if(a <= (-1*PI_DEG))
 		{
 			a = a + 2.0*PI_DEG;
 		}
 		else
 		{
-			if (a<0) {a = a + 2.0*PI_DEG;}
+			if(a < 0)	{a = a + 2.0*PI_DEG;}	// 0 ~ 360
 			return a;
 		}
 	}
@@ -1023,10 +1023,10 @@ void LEG_P2D(int position_ax[6], double theta[6], int LEG)
 		// -180에서 180으로 바꾸려면, range_deg를 수정하자.
 		
 		// 기준점 변환
-		theta[i] = theta_ax[i] - LEG_DtoP[LEG][i];
+		theta_ax[i] = theta_ax[i] - LEG_DtoP[LEG][i];
 
 		// 각도를 0 ~ 360도 사이로 변환.
-		theta_ax[i] = range_deg(theta_ax[i]);
+		theta[i] = range_deg(theta_ax[i]);
 	}
 	return;
 }
@@ -1057,10 +1057,10 @@ void ARM_P2D(int position_ax[4], double theta[4], int ARM)
 		// -180에서 180으로 바꾸려면, range_deg를 수정하자.
 		
 		// 기준점 변환
-		theta[i] = theta_ax[i] - ARM_DtoP[ARM][i];
+		theta_ax[i] = theta_ax[i] - ARM_DtoP[ARM][i];
 		
 		// 각도를 0 ~ 360도 사이로 변환.
-		theta_ax[i] = range_deg(theta_ax[i]);
+		theta[i] = range_deg(theta_ax[i]);
 	}
 	return;
 }
